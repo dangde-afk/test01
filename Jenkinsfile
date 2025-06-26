@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        VERCEL_TOKEN = credentials('vercel_token') // Token từ Jenkins Credentials
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
@@ -14,22 +18,26 @@ pipeline {
             }
         }
 
-        stage('Run Expo Web') {
+        stage('Build Web App') {
             steps {
-                script {
-                    // Tắt process đang chạy cũ (nếu có) bằng pm2
-                    bat 'pm2 delete test01-web || exit 0'
+                bat 'npx expo export --web'
+            }
+        }
 
-                    // Chạy Expo Web bằng pm2 để giữ cho luôn chạy ngầm
-                    bat 'pm2 start "npx expo start --web --no-interactive" --name test01-web'
-                }
+        stage('Deploy to Vercel') {
+            steps {
+                // Cài vercel CLI nếu cần
+                bat 'npm install -g vercel'
+
+                // Deploy trực tiếp bằng token
+                bat 'vercel deploy --prebuilt --prod --token=%VERCEL_TOKEN% --yes --confirm --cwd dist'
             }
         }
     }
 
     post {
         always {
-            echo '✅ CI/CD React Native Web (Expo) hoàn tất.'
+            echo '✅ CI/CD Expo Web đã build và deploy lên Vercel thành công.'
         }
     }
 }
