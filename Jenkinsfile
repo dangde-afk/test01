@@ -1,68 +1,69 @@
-// Jenkinsfile này định nghĩa một quy trình tích hợp liên tục và triển khai cho ứng dụng React Native Android.
-// Nó bao gồm các giai đoạn để clone mã nguồn, cài đặt các phụ thuộc, kiểm thử, xây dựng phiên bản Android release,
-// và lưu trữ artifact của bản dựng.
+// This Jenkinsfile defines a continuous integration and deployment pipeline for a React Native Android application.
+// It includes stages for source code cloning, dependency installation, testing, building the Android release,
+// and archiving the build artifact.
 pipeline {
-    // Chỉ định rằng pipeline có thể chạy trên bất kỳ agent nào có sẵn.
-    // Đối với các bản dựng iOS, thông thường sẽ cần một agent macOS có Xcode.
+    // Specifies that the pipeline can run on any available agent.
+    // For iOS builds, a macOS agent with Xcode would typically be required.
     agent any
 
-    // Định nghĩa chuỗi các giai đoạn trong pipeline.
+    // Defines the sequence of stages in the pipeline.
     stages {
-        // Giai đoạn 1: Clone kho lưu trữ
-        // Clone mã nguồn của ứng dụng React Native từ kho Git và nhánh được chỉ định.
+        // Stage 1: Clone Repository
+        // Clones the React Native application's source code from the specified Git repository and branch.
         stage ('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/dangde-afk/test01.git'
             }
         }
 
-        // Giai đoạn 2: Cài đặt phụ thuộc
-        // Cài đặt tất cả các phụ thuộc Node.js và JavaScript cần thiết cho dự án React Native.
+        // Stage 2: Install Dependencies
+        // Installs all Node.js and JavaScript dependencies required by the React Native project.
         stage ('Install Dependencies') {
             steps {
-                echo 'Đang cài đặt các phụ thuộc của Node.js và React Native...'
-                // Sử dụng 'npm install'. Nếu dự án của bạn dùng Yarn, hãy thay bằng 'yarn install'.
+                echo 'Installing Node.js and React Native dependencies...'
+                // Using 'npm install'. If your project uses Yarn, replace with 'yarn install'.
                 bat 'npm install'
             }
         }
 
-        // Giai đoạn 3: Chạy kiểm thử
-        // Thực thi bất kỳ bài kiểm thử đơn vị hoặc tích hợp JavaScript nào được định nghĩa cho dự án React Native (ví dụ: sử dụng Jest).
+        // Stage 3: Run Tests
+        // Executes any JavaScript unit or integration tests defined for the React Native project (e.g., using Jest).
+        // The "Missing script: "test"" error occurs if there is no "test" entry in the "scripts" section of the package.json file.
+        // Please ensure you have defined a "test" script (e.g., "test": "jest") or you can skip this stage if no tests are present.
         stage ('Run Tests') {
             steps {
-                echo 'Đang chạy các bài kiểm thử JavaScript...'
-                // Giả định 'npm test' đã được cấu hình trong package.json của bạn để chạy các bài kiểm thử.
+                echo 'Running JavaScript tests...'
+                // Assumes 'npm test' is configured in your package.json to run your tests.
                 bat 'npm test'
             }
         }
 
-        // Giai đoạn 4: Xây dựng bản Android Release
-        // Xây dựng gói ứng dụng Android (APK/AAB) sẵn sàng để phát hành.
-        // Lệnh này yêu cầu các công cụ Android SDK được cấu hình trên agent Jenkins.
+        // Stage 4: Build Android Release
+        // Builds the release-ready Android application package (APK/AAB).
+        // This command requires Android SDK tools to be configured on the Jenkins agent.
         stage ('Build Android Release') {
             steps {
-                echo 'Đang xây dựng APK bản phát hành Android của React Native...'
-                // Lệnh 'npx react-native build-android' biên dịch dự án Android.
-                // APK đầu ra thường sẽ được tìm thấy trong 'android/app/build/outputs/apk/release/app-release.apk'
+                echo 'Building React Native Android release APK...'
+                // The 'npx react-native build-android' command compiles the Android project.
+                // The output APK will typically be found in 'android/app/build/outputs/apk/release/app-release.apk'
                 bat 'npx react-native build-android --mode=release'
             }
         }
 
-        // Giai đoạn 5: Lưu trữ Artifact Android
-        // Lưu trữ APK Android đã tạo để có thể tải xuống từ Jenkins.
-        // Điều này giúp artifact bản dựng có sẵn cho việc phân phối tiếp theo (ví dụ: kiểm thử thủ công, tải lên Google Play Store).
+        // Stage 5: Archive Android Artifact
+        // Archives the generated Android APK so it can be downloaded from Jenkins.
+        // This makes the build artifact available for further distribution (e.g., manual testing, Google Play Store upload).
         stage ('Archive Android Artifact') {
             steps {
-                echo 'Đang lưu trữ APK Android đã tạo...'
-                // Đảm bảo thư mục đích cho các artifact đã lưu trữ tồn tại
+                echo 'Archiving the generated Android APK...'
+                // Ensure the target directory for archived artifacts exists
                 bat 'mkdir "%WORKSPACE%\\build_artifacts"'
-                // Sao chép APK bản phát hành đã tạo vào một thư mục riêng để lưu trữ
+                // Copy the generated release APK to a dedicated directory for archiving
                 bat 'xcopy "android\\app\\build\\outputs\\apk\\release\\app-release.apk" "%WORKSPACE%\\build_artifacts\\" /Y'
-                // Lưu trữ APK, giúp nó có thể truy cập được từ trang bản dựng của Jenkins
+                // Archive the APK, making it accessible from the Jenkins build page
                 archiveArtifacts artifacts: 'build_artifacts/app-release.apk', fingerprint: true
-                echo 'APK Android đã được lưu trữ thành công.'
+                echo 'Android APK archived successfully.'
             }
         }
-    } // Kết thúc khối stages
-} // Kết thúc khối pipeline
-
+    } // End of stages block
+} // End of pipeline block
