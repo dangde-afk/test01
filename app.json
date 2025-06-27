@@ -19,8 +19,8 @@
       "edgeToEdgeEnabled": true
     },
     "web": {
-      "bundler": "metro",
-      "output": "static",
+      "bundler": "webpack",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
